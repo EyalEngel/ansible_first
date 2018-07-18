@@ -1,0 +1,21 @@
+dn: dc=localdomain
+dc: localdomain
+objectClass: top
+objectClass: domain
+
+dn: cn=ldapadm ,dc=localdomain
+objectClass: organizationalRole
+cn: Manager
+description: LDAP Manager
+
+dn: ou=Pokemon,dc=localdomain
+objectClass: organizationalUnit
+ou: Pokemon
+
+dn: ou=Water,ou=Pokemon,dc=localdomain
+objectClass: organizationalUnit
+ou: Water
+
+dn: ou=Fire,ou=Pokemon,dc=localdomain
+objectClass: organizationalUnit
+ou: Fire

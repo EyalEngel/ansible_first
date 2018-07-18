@@ -1,0 +1,11 @@
+---
+ - hosts: all
+   tasks:
+   - name: Set EPEL repo
+     yum: name=epel-release state=present
+
+   - name: Install packages
+     yum: name={{ item }} state=present
+     with_items:
+      - openldap
+      - openldap-servers

@@ -1,0 +1,10 @@
+---
+ - hosts: all
+   tasks:
+   - name: Start and Enable slapd (LDAP deamon)
+     service: 
+       name: slapd 
+       state: started 
+       enabled: yes
+     become: yes
+     become_user: root
