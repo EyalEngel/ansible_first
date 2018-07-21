@@ -3,7 +3,8 @@
    tasks:
    - name: test the module
      ldap: name=epel-release state=present
-
+     options:
+      - dn: yo_mama
      
 
 

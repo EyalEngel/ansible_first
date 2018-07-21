@@ -2,7 +2,7 @@
 
 from ansible.module_utils.basic import *
 import ldap3
-
+import json
 
 import socket
 ADDRESS = socket.gethostname()                     # prob. not the best way, the best one i found.
@@ -70,25 +70,56 @@ def is_present(conn, dn):
 	# function checks if a provided dn existss in DIT
 	# LDAP does not support searching by dn, therefore we send dn as the base of the search, and see
 	# if any object exists under it.
-	s_filter = '(objectclass=*)'                				# any entry will be valid with this filter                      
+	s_filter = '(objectclass=*)'                			                        # any entry will be valid with this filter                      
 	present = search_entry(conn, s_filter, search_base=dn)
 	return present
 
 
+def add_user(conn, dn, **kwargs):
+	# function will add a user entry to DIT, if it doesn't exist already, arguments cn, sn are necessary.
+	# function assumes all users are of objectClass inetOrgPerson, and does not validate input.
+	if (not is_present(conn, dn)):
+		success = conn.add(dn, 'inetOrgPerson', kwargs)
+		assert success
+
+
+def check_args():
+	#function makes sure that playbook input is either a dn or a cn + sn + ou combo
 
 
 def main():
+	# what if a dumb user wants to add like this:  "name=Balbazor element=Water"
+	# deleted will prob. not be supported
 
 	module = AnsibleModule(
 		argument_spec = dict(
-			name = dict(required=True),				                      # deleted will prob. not be supported
+			dn = dict(aliases=['name']), 		     				      # either a dn or cn + sn + ou tree is required. couldn't
+			cn = dict(aliases=['firstname', 'common_name']),			      # find a way to define this logic here,  so it is 
+			sn = dict(aliases=['surname']),						      # impleneted later.
+			ou = dict(aliases=['group', 'organizationalUnit']),
 			state = dict(required=True, choices=['present', 'absent', 'searched']),       # serached will output a file
-			path = dict(required=False, default='~/'),                                    # should i use required?
+			path = dict(required=False, default='~/'),                                    # should i use required?   used to output
 		)
-#		support_check_mode=True
+		support_check_mode=False
 	)
+	
+	ldap = Ldap(module)
+
+
 	conn = connect()	
-	module.fail_json(msg="Something bad happend.\n" + str(conn))   # here to test output
+	
+	
+	try:
+		#add_user(conn, ............)
+		print json.dumps({"msg": "not yet"})
+		module.exit_json(changed=True)							      # perhaps add message beyond ansible's default?
+
+	except AssertionError:	
+		module.fail_json(msg="Entry Addition Query was unseccessful." + str(conn))            # here to test output
+	except Exception as e:
+		print json.dumps({"failed": True, "msg": e})
+		module.fail_json(msg="Something bad happend.")
+		
 
 
 # Successful exit:
