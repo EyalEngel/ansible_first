@@ -6,9 +6,9 @@ import ldap3
 
 import socket
 ADDRESS = socket.gethostname()                     # prob. not the best way, the best one i found.
-HOSTNAME, DOMAINNAME = ADDRESS.split('.')	   # assuming code will be run on every target machine.
+HOST_NAME, DOMAIN_NAME = ADDRESS.split('.')	   # assuming code will be run on every target machine.
 
-ADMIN_DN = "cn=Manager,dc=" + DOMAINNAME
+ADMIN_DN = "cn=Manager,dc=" + DOMAIN_NAME
 ADMIN_PASS = '1'
 
 
@@ -59,6 +59,23 @@ def connect(server=ADDRESS, user_dn=ADMIN_DN, passphrase=ADMIN_PASS):
 	
 	conn = ldap3.Connection(server, user_dn, passphrase, auto_bind=True)
 	return conn
+
+
+def search_entry(conn, serach_filter, search_base=DOMAIN_NAME):
+	# a very simple wrapper function to provide default values.
+	conn.search(search_base, search_filter)
+
+
+def is_present(conn, dn):
+	# function checks if a provided dn existss in DIT
+	# LDAP does not support searching by dn, therefore we send dn as the base of the search, and see
+	# if any object exists under it.
+	s_filter = '(objectclass=*)'                				# any entry will be valid with this filter                      
+	present = search_entry(conn, s_filter, search_base=dn)
+	return present
+
+
+
 
 def main():
 
