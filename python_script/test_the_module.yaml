@@ -1,15 +1,24 @@
 ---
  - hosts: all
    tasks:
-   - name: test the module
-     ldap: name=epel-release state=present
-     options:
-      - dn: yo_mama
-     
+    - name: test the module    with friendly version
+      ldap: 
+        name:
+          friendly:
+            firstname: 'char_temp3'
+            lastname: "Ash's"
+            groups: 'Fire, Pokemon'
+        state2: present 
 
 
-#   - name: Install packages
-#     yum: name={{ item }} state=present
-#     with_items:
-#      - openldap
-#      - openldap-servers
+
+#   - name: test the module      with dn
+#      ldap: 
+#        name:
+#          dn:
+#            dn:  'cn=Bal_temp2,ou=Water,ou=Pokemon,dc=localdomain'
+#        state2: present 
+
+
+
+

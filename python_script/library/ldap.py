@@ -53,6 +53,21 @@ EXAMPLES = '''
 # note to self: make sure to add full support to LDAP protocol.
 
 
+class Ldap(object):
+	"""
+	This is an Ldap server manipulation Class. it is used to convey all the needed information and variables.
+	"""
+	def __init__(self, module):
+		self._module  = module
+		self.dn       = module.params['dn']
+		self.cn       = module.params['cn']
+		self.sn       = module.params['sn']
+		self.ou       = module.params['ou']
+		self.state    = module.params['state']
+		self.path     = module.params['path']
+
+
+
 def connect(server=ADDRESS, user_dn=ADMIN_DN, passphrase=ADMIN_PASS):
 	# this function is used to connect and authenticate against the LDAP server.
 	# would normally write a "build_DN" function, but this is used only once. other DNs should come complete from input.	
@@ -83,26 +98,33 @@ def add_user(conn, dn, **kwargs):
 		assert success
 
 
-def check_args():
-	#function makes sure that playbook input is either a dn or a cn + sn + ou combo
-
-
 def main():
 	# what if a dumb user wants to add like this:  "name=Balbazor element=Water"
+	# answer: user will choose to define name either by dn, or by first & last names and groups.
 	# deleted will prob. not be supported
-
+	
 	module = AnsibleModule(
 		argument_spec = dict(
-			dn = dict(aliases=['name']), 		     				      # either a dn or cn + sn + ou tree is required. couldn't
-			cn = dict(aliases=['firstname', 'common_name']),			      # find a way to define this logic here,  so it is 
-			sn = dict(aliases=['surname']),						      # impleneted later.
-			ou = dict(aliases=['group', 'organizationalUnit']),
-			state = dict(required=True, choices=['present', 'absent', 'searched']),       # serached will output a file
+			name = dict(										# name:
+				required = True, 
+				type = 'dict',
+			 	options = dict(
+					dn = dict(								# use dn
+						dn = dict(required = True, aliases = ['name'])),
+					friendly = dict(							# use friendy names
+						gn = dict(required=True, aliases=['firstname', 'givenName']),	    
+						sn = dict(required=True, aliases=['surname']),		
+						ou = dict(required=True, aliases=['groups', 'organizationalUnit']),
+					)
+				)
+			),
+			state2 = dict(required=True, choices=['present', 'absent', 'searched']),       # serached will output a file
 			path = dict(required=False, default='~/'),                                    # should i use required?   used to output
-		)
-		support_check_mode=False
-	)
-	
+		),
+		supports_check_mode=False
+	)	
+
+
 	ldap = Ldap(module)
 
 
