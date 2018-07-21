@@ -4,8 +4,11 @@
    - name: Set EPEL repo
      yum: name=epel-release state=present
 
-   - name: Install packages
+   - name: Install Linux packages
      yum: name={{ item }} state=present
      with_items:
       - openldap
       - openldap-servers
+
+   - name: Install Python packages
+    pip: name=ldap3 state=present

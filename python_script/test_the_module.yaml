@@ -2,7 +2,10 @@
  - hosts: all
    tasks:
    - name: test the module
-     ldap: name=epel-release
+     ldap: name=epel-release state=present
+
+     
+
 
 #   - name: Install packages
 #     yum: name={{ item }} state=present
