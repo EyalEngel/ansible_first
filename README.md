@@ -12,8 +12,33 @@ such as adding/searching users.
 
 
 
-
-
-
-
 #(wish me luck :) )
+
+
+
+
+
+
+notes:
+if role is run dynamically, we can hostname from inventory facts, and get rid of dumb usage of socket library.
+										(use defaults file?)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

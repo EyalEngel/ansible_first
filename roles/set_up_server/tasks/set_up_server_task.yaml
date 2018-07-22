@@ -1,0 +1,28 @@
+ - hosts: all
+
+   vars:
+   - admin_password: 1
+   - server_conf_hdb_path: /etc/ansible/temp_ldap/templates/server_conf_hdb.conf 
+
+   tasks:
+     - name: Generate password Hash 
+       shell: slappasswd -h {SHA} -s {{ admin_password }} > ~/admin.pass.hash
+
+     - name: remove password hash from hdb config file, to keep it up to date. save to temp file.
+       shell: grep -v olcRootPW {{ server_conf_hdb_path }} > {{ server_conf_hdb_path }}.temp
+
+     - name: get rid of temp file.
+       shell: mv -f {{ server_conf_hdb_path }}.temp {{ server_conf_hdb_path }}
+
+     - name: Append password hash to hdb config file
+       shell: "cat ~/admin.pass.hash | xargs echo olcRootPW: >> {{ server_conf_hdb_path }}"
+
+     - name: Update server hdb configuration from ansible master server
+       template:
+         src: "{{ server_conf_hdb_path }}"
+         dest: /etc/openldap/slapd.d/cn=config/olcDatabase={2}hdb.ldif
+
+     - name: Update server monitor configuration from ansible master server
+       template: 
+         src:  /etc/ansible/temp_ldap/templates/server_conf_monitor.conf
+         dest: /etc/openldap/slapd.d/cn=config/olcDatabase={1}monitor.ldif
