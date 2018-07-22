@@ -1,6 +1,0 @@
----
-module: ldap
-short_description: This is a module for modifying entries on LDAP servers.
-description: 
- - This  module is used to add, sesarch or delete users and entries on an LDAP server.
- - name is entry distinguishing name (dn)
