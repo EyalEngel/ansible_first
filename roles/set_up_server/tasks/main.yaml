@@ -11,4 +11,4 @@
    import_tasks: set_up_DB_task.yaml
 
  - name: add a user entry to server using ldap module.
-   import_tasks: set_up_DB_task.yaml
+   import_tasks: add_user.yaml

@@ -25,4 +25,5 @@
 
      - name: Build DIT with DB_base directory structure
        shell: ldapadd -cx -w {{admin_pass}} -D "cn=Manager,dc={{domain}}" -f {{ path_to_DB_base['dest'] }}
-
+       register: ldap_cmd
+       failed_when: ldap_cmd.rc != 0 and ldap_cmd.rc != 68    

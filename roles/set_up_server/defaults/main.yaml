@@ -12,7 +12,7 @@ python_packages:
 
 # authenticate vars
 admin_pass: 1
-domain: localdoamin              #  I want it to be defined dynamically 
+domain: localdomain              #  I want it to be defined dynamically 
 
 
 # paths to config files:
