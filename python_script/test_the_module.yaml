@@ -1,23 +1,33 @@
 ---
  - hosts: all
    tasks:
+#    - name: test the module    with friendly version
+#      ldap: 
+#        mode:
+#          friendly:
+#            firstname: 'char_temp3'               # aliases don't work the way i want them to :(
+#            lastname: "Ash's"     
+#            groups: 'Fire, Pokemon'
+#        state: present 
+
+
     - name: test the module    with friendly version
       ldap: 
-        name:
+        mode:
           friendly:
-            firstname: 'char_temp3'
-            lastname: "Ash's"
-            groups: 'Fire, Pokemon'
-        state2: present 
+            gn: 'char_temp3'
+            sn: "Ash's"
+            ou: 'Fire, Pokemon'
+        state: present 
 
 
 
 #   - name: test the module      with dn
 #      ldap: 
-#        name:
+#        mode:
 #          dn:
 #            dn:  'cn=Bal_temp2,ou=Water,ou=Pokemon,dc=localdomain'
-#        state2: present 
+#        state: present 
 
 
 

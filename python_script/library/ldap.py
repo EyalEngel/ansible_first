@@ -58,13 +58,57 @@ class Ldap(object):
 	This is an Ldap server manipulation Class. it is used to convey all the needed information and variables.
 	"""
 	def __init__(self, module):
-		self._module  = module
-		self.dn       = module.params['dn']
-		self.cn       = module.params['cn']
-		self.sn       = module.params['sn']
-		self.ou       = module.params['ou']
-		self.state    = module.params['state']
-		self.path     = module.params['path']
+		self._module      = module
+		self.mode         ="" 
+		self.state        = module.params['state']
+		self.path         = module.params['path']
+		self.dn	          = ""
+		self.gn	          = ""
+		self.cn	          = ""
+		self.sn           = ""
+		self.ou_list      = [] 
+		self.complete_obj()
+	
+
+	def complete_obj(self):
+		# user data can be specified in two modes.
+		# this function is here to complete the missing data, so all object's parameters can always be accessed.
+		# please note that this function assumes the data is valid with LDAP (RFC...)
+
+		if bool(self._module.params['mode']['dn']):
+			self.mode = 'dn'
+			self.complete_friendly()
+		elif bool(self._module.params['mode']['friendly']):
+			self.mode = 'friendly'
+			self.complete_dn()
+		else:
+			raise NotImplementedError
+
+
+	def complete_friendly(self):
+		# if data was inserted using dn mode, complete the friendly data.
+		self.dn = self._module.params['mode']['dn']['dn']
+		for pair in self.dn.split(','):				    # pair looks like cn=example
+			for attr, value in pair.split('='):
+				if attr == 'cn':
+					self.cn = value
+				if attr == 'ou':
+					self.ou_list.append(value)
+				if attr == 'cn':			
+					self.cn = value
+					self.gn, self.sn = value.split(' ') # split commonName to givenName, Surname
+									    # if this confuses you, read about LDAP.
+
+
+	def complete_dn(self):
+		# if data was unserted using friendly mode, complete the dn data.
+		self.gn = self._module.params['mode']['friendly']['gn']
+		self.sn = self._module.params['mode']['friendly']['sn']
+		# ou will be handled as a list, in order to maintain code unity and controll.
+		self.ou_list.extend(self._module.params['mode']['friendly']['ou'].replace(' ','').split(',')) 
+		self.cn = self.gn + ' ' + self.sn
+		self.dn = "cn={cn},ou={ou},dc={dc}".format(cn=self.cn, ou=',ou='.join(self.ou_list), dc=DOMAIN_NAME)        # build dn
+
 
 
 
@@ -76,7 +120,7 @@ def connect(server=ADDRESS, user_dn=ADMIN_DN, passphrase=ADMIN_PASS):
 	return conn
 
 
-def search_entry(conn, serach_filter, search_base=DOMAIN_NAME):
+def search_entry(conn, search_filter, search_base=DOMAIN_NAME):
 	# a very simple wrapper function to provide default values.
 	conn.search(search_base, search_filter)
 
@@ -102,10 +146,9 @@ def main():
 	# what if a dumb user wants to add like this:  "name=Balbazor element=Water"
 	# answer: user will choose to define name either by dn, or by first & last names and groups.
 	# deleted will prob. not be supported
-	
 	module = AnsibleModule(
 		argument_spec = dict(
-			name = dict(										# name:
+			mode = dict(										# name:
 				required = True, 
 				type = 'dict',
 			 	options = dict(
@@ -115,25 +158,24 @@ def main():
 						gn = dict(required=True, aliases=['firstname', 'givenName']),	    
 						sn = dict(required=True, aliases=['surname']),		
 						ou = dict(required=True, aliases=['groups', 'organizationalUnit']),
-					)
+						type='dict'
+					),
 				)
 			),
-			state2 = dict(required=True, choices=['present', 'absent', 'searched']),       # serached will output a file
+			state = dict(required=True, choices=['present', 'absent', 'searched']),       # serached will output a file
 			path = dict(required=False, default='~/'),                                    # should i use required?   used to output
-		),
-		supports_check_mode=False
+		)
 	)	
 
-
-	ldap = Ldap(module)
-
+	try:
+		ldap = Ldap(module)
+	except Exception as e:	
+		module.fail_json(msg='failed to create  Ldap object', exp=e)
 
 	conn = connect()	
 	
-	
 	try:
-		#add_user(conn, ............)
-		print json.dumps({"msg": "not yet"})
+		add_user(conn, ldap.dn, sn=ldap.sn, cn=ldap.cn)
 		module.exit_json(changed=True)							      # perhaps add message beyond ansible's default?
 
 	except AssertionError:	
