@@ -1,5 +1,0 @@
-ldapsearch -x -w 1 -D"cn=Manager,dc=localdomain" -b "dc=localdomain"  "(objectclass=*)"
-
-ldapadd -cx -w 1 -D"cn=Manager,dc=localdomain" -f DB_BASE.conf
-
-ldapdelete -x -w 1 -D "cn=Manager,dc=localdomain"
