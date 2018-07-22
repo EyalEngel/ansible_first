@@ -1,0 +1,4 @@
+---
+ - hosts: all
+   roles:
+    - role: set_up_server

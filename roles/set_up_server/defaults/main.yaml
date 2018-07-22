@@ -1,0 +1,36 @@
+---
+# needed packages:
+repo_list: 
+  - epel-release
+
+linux_packages:
+  - openldap
+  - openldap-servers
+
+python_packages:
+  - ldap3
+
+# authenticate vars
+admin_pass: 1
+domain: localdoamin              #  I want it to be defined dynamically 
+
+
+# paths to config files:
+path_to_ldap_dir: /vat/lib/ldap
+path_to_admin_pass_hash: ~/admin.pass.hash
+
+path_to_DB_conf:
+  src: /etc/ansible/temp_ldap/ansible_first/roles/set_up_server/templates/server_conf_DB_CONFIG.conf
+  dest: /var/lib/ldap/DB_CONFIG
+
+path_to_DB_base:
+  src:  /etc/ansible/temp_ldap/ansible_first/roles/set_up_server/templates/server_conf_DB_base.ldif
+  dest: ~/DB_BASE.ldif
+
+path_to_hdb_conf:
+  src: /etc/ansible/temp_ldap/ansible_first/roles/set_up_server/templates/server_conf_hdb.conf
+  dest: /etc/openldap/slapd.d/cn=config/olcDatabase={2}hdb.ldif
+
+path_to_monitor_conf:
+  src: /etc/ansible/temp_ldap/ansible_first/roles/set_up_server/templates/server_conf_monitor.conf
+  dest: /etc/openldap/slapd.d/cn=config/olcDatabase={1}monitor.ldif
