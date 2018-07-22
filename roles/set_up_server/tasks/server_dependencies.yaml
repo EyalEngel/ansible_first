@@ -1,0 +1,9 @@
+---
+   - name: Set needed repositories.
+     yum: name={{ repo_list }} state=present
+
+   - name: Install Linux packages
+     yum: name={{ linux_packages }} state=present
+
+   - name: Install Python packages
+     pip: name={{ python_packages }} state=present

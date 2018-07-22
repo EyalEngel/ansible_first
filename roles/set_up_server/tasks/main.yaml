@@ -1,0 +1,14 @@
+ - name: set Server Dependencies.
+   import_tasks: server_dependencies.yaml
+
+ - name: set the LDAP server configuration.
+   import_tasks: set_up_server_task.yaml
+
+ - name: start the server.
+   import_tasks: start_slapd_task.yaml
+
+ - name: set DB - the DIT base.
+   import_tasks: set_up_DB_task.yaml
+
+ - name: add a user entry to server using ldap module.
+   import_tasks: add_user.yaml

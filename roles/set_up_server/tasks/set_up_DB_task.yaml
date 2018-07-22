@@ -1,18 +1,16 @@
- - hosts: all
-   tasks:
      - name: Update server DB configuration from ansible master server
        template: 
-         src:  /etc/ansible/temp_ldap/templates/server_conf_DB_CONFIG.conf
-         dest: /var/lib/ldap/DB_CONFIG
+         src:  "{{ path_to_DB_conf['src'] }}"
+         dest:  "{{ path_to_DB_conf['dest'] }}"
 
      - name: Define ldap as user and group for DB files 
        file: 
-         path: /var/lib/ldap
+         path: "{{ path_to_ldap_dir }}"
          owner: ldap
          group: ldap
          recurse: yes
 
-     - name: Add files to ldap schema
+     - name: Add files schema files
        shell: ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/{{ item }}.ldif
        with_items: 
          - cosine
@@ -22,8 +20,10 @@
 
      - name: Push to server Basic Directory structure
        template:
-         src: /etc/ansible/temp_ldap/templates/server_conf_DB_base.ldif
-         dest: ~/DB_BASE.ldif
+         src:  "{{ path_to_DB_base['src'] }}"
+         dest:  "{{ path_to_DB_base['dest'] }}"
 
      - name: Build DIT with DB_base directory structure
-       shell: ldapadd -cx -w 1 -D"cn=Manager,dc=localdomain" -f ~/DB_BASE.ldif
+       shell: ldapadd -cx -w {{admin_pass}} -D "cn=Manager,dc={{domain}}" -f {{ path_to_DB_base['dest'] }}
+       register: ldap_cmd
+       failed_when: ldap_cmd.rc != 0 and ldap_cmd.rc != 68    

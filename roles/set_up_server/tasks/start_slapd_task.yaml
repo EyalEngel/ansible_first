@@ -1,6 +1,4 @@
 ---
- - hosts: all
-   tasks:
    - name: Start and Enable slapd (LDAP deamon)
      service: 
        name: slapd 

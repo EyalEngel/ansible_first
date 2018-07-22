@@ -1,0 +1,22 @@
+     - name: Generate password Hash 
+       shell: slappasswd -h {SHA} -s {{ admin_pass }} > {{ path_to_admin_pass_hash }}
+
+     - name: remove password hash from hdb config file, to keep it up to date. save to temp file.
+       shell: grep -v olcRootPW {{ path_to_hdb_conf['src'] }} > {{  path_to_hdb_conf['src'] }}.temp
+
+     - name: get rid of temp file.
+       shell: mv -f {{ path_to_hdb_conf['src'] }}.temp {{ path_to_hdb_conf['src'] }}
+
+     - name: Append password hash to hdb config file
+       shell: "cat {{ path_to_admin_pass_hash }} | xargs echo olcRootPW: >> {{ path_to_hdb_conf['src'] }}"
+
+     - name: Update server hdb configuration from ansible master server
+       template:
+         src: "{{ path_to_hdb_conf['src'] }}"
+         dest: "{{ path_to_hdb_conf['dest'] }}"
+
+     - name: Update server monitor configuration from ansible master server
+       template: 
+         src: "{{ path_to_monitor_conf['src'] }}"
+         dest: "{{ path_to_monitor_conf['dest'] }}"
+
