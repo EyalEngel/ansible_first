@@ -1,0 +1,6 @@
+---
+ - name: Set EPEL repo
+   yum: name=epel-release state=present
+
+ - name: Install packages
+   yum: name=openldap-clients
