@@ -70,13 +70,12 @@ EXAMPLES = '''
       ldap: 
         mode:
           dn:
-            dn:  'cn=Bal_temp2,ou=Water,ou=Pokemon,dc=localdomain'
+            dn:  'cn=Bal temp2,ou=Water,ou=Pokemon,dc=localdomain'
         state: present 
 '''
 
 
 # module does not support check mode... (yet)
-# note to self: make sure to add full support to LDAP protocol.
 
 
 class Ldap(object):
