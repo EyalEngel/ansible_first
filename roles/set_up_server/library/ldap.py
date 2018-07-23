@@ -1,20 +1,7 @@
 #!/usr/bin/python
-
 from ansible.module_utils.basic import *
 import ldap3
 import json
-
-import socket
-ADDRESS = socket.gethostname()                     # prob. not the best way, the best one i found.
-HOST_NAME, DOMAIN_NAME = ADDRESS.split('.')	   # assuming code will be run on every target machine.
-
-ADMIN_DN = "cn=Manager,dc=" + DOMAIN_NAME
-ADMIN_PASS = '1'
-
-
-
-
-
 
 DOCUMENTATION = '''
 module: ldap
@@ -53,6 +40,7 @@ EXAMPLES = '''
             lastname: "Ash's"                     # this example won't run. 
             groups: 'Fire, Pokemon'
         state: present 
+        admin_pass: 1
 
 
     - name: test the module    with friendly version
@@ -63,6 +51,7 @@ EXAMPLES = '''
             sn: "Ash's"
             ou: 'Fire, Pokemon'
         state: present 
+        admin_pass: 1
 
 
 
@@ -72,9 +61,9 @@ EXAMPLES = '''
           dn:
             dn:  'cn=Bal temp2,ou=Water,ou=Pokemon,dc=localdomain'
         state: present 
+        admin_pass: 1
+
 '''
-
-
 # module does not support check mode... (yet)
 
 
@@ -83,15 +72,19 @@ class Ldap(object):
 	This is an Ldap server manipulation Class. it is used to convey all the needed information and variables.
 	"""
 	def __init__(self, module):
-		self._module      = module
-		self.mode         ="" 
-		self.state        = module.params['state']
-		self.path         = module.params['path']
-		self.dn	          = ""
-		self.gn	          = ""
-		self.cn	          = ""
-		self.sn           = ""
-		self.ou_list      = [] 
+		self._module            = module
+		self.mode               = "" 
+		self.state              = module.params['state']
+		self.path               = module.params['path']
+		self.admin_pass         = module.params['admin_pass']
+		self.admin_dn           = module.params['admin_cn'] + ',dc=' + module.params['server_domain']
+		self.server_hostname    = module.params['server_hostname']
+		self.server_domain      = module.params['server_domain']
+		self.dn	                = ""
+		self.gn	                = ""
+		self.cn	                = ""
+		self.sn                 = ""
+		self.ou_list            = [] 
 		self.complete_obj()
 	
 
@@ -132,12 +125,12 @@ class Ldap(object):
 		# ou will be handled as a list, in order to maintain code unity and controll.
 		self.ou_list.extend(self._module.params['mode']['friendly']['ou'].replace(' ','').split(',')) 
 		self.cn = self.gn + ' ' + self.sn
-		self.dn = "cn={cn},ou={ou},dc={dc}".format(cn=self.cn, ou=',ou='.join(self.ou_list), dc=DOMAIN_NAME)        # build dn
+		self.dn = "cn={cn},ou={ou},dc={dc}".format(cn=self.cn, ou=',ou='.join(self.ou_list), dc=self.server_domain)        # build dn
 
 
 
 
-def connect(server=ADDRESS, user_dn=ADMIN_DN, passphrase=ADMIN_PASS):
+def connect(server, user_dn, passphrase):
 	# this function is used to connect and authenticate against the LDAP server.
 	# would normally write a "build_DN" function, but this is used only once. other DNs should come complete from input.	
 	
@@ -145,7 +138,7 @@ def connect(server=ADDRESS, user_dn=ADMIN_DN, passphrase=ADMIN_PASS):
 	return conn
 
 
-def search_entry(conn, search_filter, search_base=DOMAIN_NAME):
+def search_entry(conn, search_filter, search_base):
 	# a very simple wrapper function to provide default values.
 	conn.search(search_base, search_filter)
 
@@ -156,7 +149,7 @@ def is_present(conn, dn):
 	# if any object exists under it.
 	s_filter = '(objectclass=*)'                			                        # any entry will be valid with this filter                      
 	present = search_entry(conn, s_filter, search_base=dn)
-	return present
+	return bool(present)
 
 
 def add_user(conn, dn, **kwargs):
@@ -189,6 +182,10 @@ def main():
 			),
 			state = dict(required=True, choices=['present', 'absent', 'searched']),       # serached will output a file
 			path = dict(required=False, default='~/'),                                    # should i use required?   used to output
+			admin_cn = dict(required=True),
+			admin_pass = dict(required=True),
+			server_hostname = dict(reqired=True),
+			server_domain = dict(reqired=True)
 		)
 	)	
 
@@ -196,28 +193,23 @@ def main():
 		ldap = Ldap(module)
 	except Exception as e:	
 		module.fail_json(msg='failed to create  Ldap object', exp=e)
+	server_address = ldap.server_hostname + '.' + ldap.server_domain
 
-	conn = connect()	
-	
 	try:
-		add_user(conn, ldap.dn, sn=ldap.sn, cn=ldap.cn)
-		module.exit_json(changed=True)							      # perhaps add message beyond ansible's default?
+		conn = connect(server_address, ldap.admin_dn, ldap.admin_pass)	
+	except Exception as e:
+		module.fail_json(msg="Connection to server was unseccessful.\n" + str(e))            # here to test output
 
-	except AssertionError:	
-		module.fail_json(msg="Entry Addition Query was unseccessful." + str(conn))            # here to test output
+	try:
+		add_user(conn, ldap.dn, sn=ldap.sn, gn=ldap.gn)
+		module.exit_json(changed=True)							      # perhaps add message beyond ansible's default?
+	except AssertionError as ae:	
+		module.fail_json(msg="Entry Addition Query was unseccessful." + str(conn))
 	except Exception as e:
 		print json.dumps({"failed": True, "msg": e})
 		module.fail_json(msg="Something bad happend.")
 		
 
-
-# Successful exit:
-#module.exit_json(changed=true, additional_data="Ansible is cool!")
-
-# Unsuccessful exit:
-#module.fail_json(msg="Something bad happend.")                    # msg is a must
-
-#from ansible.module_utils.basic import *
 if __name__ == '__main__':
 	main()
 

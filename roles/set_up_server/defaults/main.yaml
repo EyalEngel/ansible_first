@@ -11,9 +11,10 @@ python_packages:
   - ldap3
 
 # authenticate vars
+admin_cn: cn=Manager
 admin_pass: 1
-domain: localdomain              #  I want it to be defined dynamically 
-
+server_hostname: "{{ ansible_hostname }}"    # i hope its defined dynamicallly
+server_domain: "{{ ansible_domain }}"
 
 # paths to config files:
 path_to_ldap_dir: /vat/lib/ldap
