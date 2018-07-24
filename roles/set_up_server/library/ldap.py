@@ -140,14 +140,14 @@ def connect(server, user_dn, passphrase):
 
 def search_entry(conn, search_filter, search_base):
 	# a very simple wrapper function to provide default values.
-	conn.search(search_base, search_filter)
+	return conn.search(search_base, search_filter)
 
 
 def is_present(conn, dn):
 	# function checks if a provided dn existss in DIT
 	# LDAP does not support searching by dn, therefore we send dn as the base of the search, and see
 	# if any object exists under it.
-	s_filter = '(objectclass=*)'                			                        # any entry will be valid with this filter                      
+	s_filter = '(objectClass=*)'                			                        # any entry will be valid with this filter                      
 	present = search_entry(conn, s_filter, search_base=dn)
 	return bool(present)
 
@@ -158,6 +158,10 @@ def add_user(conn, dn, **kwargs):
 	if (not is_present(conn, dn)):
 		success = conn.add(dn, 'inetOrgPerson', kwargs)
 		assert success
+		return True
+	else:
+		return False
+
 
 
 def main():
@@ -201,14 +205,17 @@ def main():
 		module.fail_json(msg="Connection to server was unseccessful.\n" + str(e))            # here to test output
 
 	try:
-		add_user(conn, ldap.dn, sn=ldap.sn, gn=ldap.gn)
-		module.exit_json(changed=True)							      # perhaps add message beyond ansible's default?
+		added = add_user(conn, ldap.dn, sn=ldap.sn, gn=ldap.gn)
 	except AssertionError as ae:	
 		module.fail_json(msg="Entry Addition Query was unseccessful." + str(conn))
 	except Exception as e:
 		print json.dumps({"failed": True, "msg": e})
 		module.fail_json(msg="Something bad happend.")
-		
+	if added:
+		module.exit_json(changed=True)							      # perhaps add message beyond ansible's default?
+	else:
+		module.exit_json(changed=False)
+
 
 if __name__ == '__main__':
 	main()

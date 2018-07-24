@@ -3,4 +3,4 @@ ldapsearch -x -w 1 -D"cn=Manager,dc=localdomain" -b "dc=localdomain"  "(objectcl
 ldapadd -cx -w 1 -D"cn=Manager,dc=localdomain" -f DB_BASE.conf
 
 ldapdelete -x -w 1 -D "cn=Manager,dc=localdomain"
-ldapdelete -x -w 1 -D cn=Manager,dc=localdomain cn=char_temp3 Ash's,ou=Fire,ou=Pokemon,dc=localdomain
+ldapdelete -x -w 1 -D cn=Manager,dc=localdomain cn=char_temp3 Ashs,ou=Fire,ou=Pokemon,dc=localdomain

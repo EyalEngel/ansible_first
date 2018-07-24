@@ -4,7 +4,7 @@
 #        mode:
 #          friendly:
 #            firstname: 'char_temp3'               # aliases don't work the way i want them to :(
-#            lastname: "Ash's"     
+#            lastname: "Ashs"     
 #            groups: 'Fire, Pokemon'
 #       state: present 
 #       admin_cn: "{{ admin_cn }}"
