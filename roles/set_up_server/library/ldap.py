@@ -107,12 +107,12 @@ class Ldap(object):
 		# if data was inserted using dn mode, complete the friendly data.
 		self.dn = self._module.params['mode']['dn']['dn']	    
 		for pair in self.dn.split(','):				    # pair looks like cn=example
-			for attr, value in pair.split('='):		    # trusting the pairs will be read in order
-				if attr == 'ou':
-					self.ou_list.append(value)
-				elif attr == 'cn':			
-					self.cn = value
-					self.gn, self.sn = value.split(' ') # split commonName to givenName, Surname
+			attr, value = pair.split('=')		            # trusting the pairs will be read in order
+			if attr == 'ou':
+				self.ou_list.append(value)
+			elif attr == 'cn':			
+				self.cn = value
+				self.gn, self.sn = value.split(' ')	    # split commonName to givenName, Surname
 									    # if this confuses you, read about LDAP.
 
 
@@ -170,13 +170,19 @@ def init_Ansible_Module():
 				type = 'dict',
 			 	options = dict(
 					dn = dict(								# use dn
-						dn = dict(required = True, aliases = ['name'])),
-					friendly = dict(							# use friendy names
-						gn = dict(required=True, aliases=['firstname', 'givenName']),	    
-						sn = dict(required=True, aliases=['surname']),		
-						ou = dict(required=True, aliases=['groups', 'organizationalUnit']),
-						type='dict'
+						type='dict',
+						options = dict(
+							dn = dict(required = True, aliases = ['name'])
+						)
 					),
+					friendly = dict(							# use friendy names
+						type='dict',
+						options = dict(
+							gn = dict(required=True, aliases=['firstname', 'givenName']),	    
+							sn = dict(required=True, aliases=['surname']),		
+							ou = dict(required=True, aliases=['groups', 'organizationalUnit'])
+						)
+					)
 				)
 			),
 			state = dict(required=True, choices=['present', 'absent', 'searched']),       # serached will output a file
