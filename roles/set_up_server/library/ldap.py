@@ -76,10 +76,10 @@ class Ldap(object):
 		self.mode               = "" 
 		self.state              = module.params['state']
 		self.path               = module.params['path']
-		self.admin_pass         = module.params['admin_pass']
-		self.admin_dn           = module.params['admin_cn'] + ',dc=' + module.params['server_domain']
 		self.server_hostname    = module.params['server_hostname']
-		self.server_domain      = module.params['server_domain']
+		self.server_domain      = ',dc='.join(module.params['server_domain'].split('.'))
+		self.admin_pass         = module.params['admin_pass']
+		self.admin_dn           = module.params['admin_cn'] + ',dc=' + self.server_domain
 		self.dn	                = ""
 		self.gn	                = ""
 		self.cn	                = ""
@@ -93,9 +93,9 @@ class Ldap(object):
 		# this function is here to complete the missing data, so all object's parameters can always be accessed.
 		# please note that this function assumes the data is valid with LDAP (RFC...)
 
-		if bool(self._module.params['mode']['dn']):
-			self.mode = 'dn'
-			self.complete_friendly()
+		if bool(self._module.params['mode']['dn']):		    # the mode that was chosen will contain data:
+			self.mode = 'dn'                                    # any string will return True. empty string or None indicates
+			self.complete_friendly()                            # that the other mode was chosen.
 		elif bool(self._module.params['mode']['friendly']):
 			self.mode = 'friendly'
 			self.complete_dn()
@@ -105,21 +105,19 @@ class Ldap(object):
 
 	def complete_friendly(self):
 		# if data was inserted using dn mode, complete the friendly data.
-		self.dn = self._module.params['mode']['dn']['dn']
+		self.dn = self._module.params['mode']['dn']['dn']	    
 		for pair in self.dn.split(','):				    # pair looks like cn=example
-			for attr, value in pair.split('='):
-				if attr == 'cn':
-					self.cn = value
+			for attr, value in pair.split('='):		    # trusting the pairs will be read in order
 				if attr == 'ou':
 					self.ou_list.append(value)
-				if attr == 'cn':			
+				elif attr == 'cn':			
 					self.cn = value
 					self.gn, self.sn = value.split(' ') # split commonName to givenName, Surname
 									    # if this confuses you, read about LDAP.
 
 
 	def complete_dn(self):
-		# if data was unserted using friendly mode, complete the dn data.
+		# if data was inserted using friendly mode, complete the dn data.
 		self.gn = self._module.params['mode']['friendly']['gn']
 		self.sn = self._module.params['mode']['friendly']['sn']
 		# ou will be handled as a list, in order to maintain code unity and controll.
@@ -163,11 +161,8 @@ def add_user(conn, dn, **kwargs):
 		return False
 
 
-
-def main():
-	# what if a dumb user wants to add like this:  "name=Balbazor element=Water"
-	# answer: user will choose to define name either by dn, or by first & last names and groups.
-	# deleted will prob. not be supported
+def init_Ansible_Module():
+	# function initiates module variable as an AnsibleModule and defines usage variables. func returns AnsibleModule object
 	module = AnsibleModule(
 		argument_spec = dict(
 			mode = dict(										# name:
@@ -191,30 +186,43 @@ def main():
 			server_hostname = dict(reqired=True),
 			server_domain = dict(reqired=True)
 		)
-	)	
+	)
+	return module
 
-	try:
-		ldap = Ldap(module)
-	except Exception as e:	
-		module.fail_json(msg='failed to create  Ldap object', exp=e)
-	server_address = ldap.server_hostname + '.' + ldap.server_domain
 
-	try:
-		conn = connect(server_address, ldap.admin_dn, ldap.admin_pass)	
-	except Exception as e:
-		module.fail_json(msg="Connection to server was unseccessful.\n" + str(e))            # here to test output
-
-	try:
-		added = add_user(conn, ldap.dn, sn=ldap.sn, gn=ldap.gn)
-	except AssertionError as ae:	
-		module.fail_json(msg="Entry Addition Query was unseccessful." + str(conn))
-	except Exception as e:
-		print json.dumps({"failed": True, "msg": e})
-		module.fail_json(msg="Something bad happend.")
+def exit(module, added):
+	# func returns the exit json according to added boolian.
 	if added:
 		module.exit_json(changed=True)							      # perhaps add message beyond ansible's default?
 	else:
 		module.exit_json(changed=False)
+
+
+def main():
+	# what if a dumb user wants to add like this:  "name=Balbazor element=Water"
+	# answer: user will choose to define name either by dn, or by first & last names and groups.
+	# deleted will prob. not be supported
+	
+	module = init_Ansible_Module()
+	try:
+		ldap = Ldap(module)
+	except Exception as e:									      # when working with ansible, we never want to have
+		module.fail_json(msg='failed to create  Ldap object', exp=str(e))		      # an unhandled exception.
+	
+	server_address = ldap.server_hostname + '.' + ldap.server_domain
+	try:
+		conn = connect(server_address, ldap.admin_dn, ldap.admin_pass)	
+	except Exception as e:
+		module.fail_json(msg="Connection to server was unseccessful.",  exp=str(e), server=server_address, admni_dn = ldap.admin_dn)
+
+	try:
+		added = add_user(conn, ldap.dn, sn=ldap.sn, gn=ldap.gn)
+	except AssertionError:	
+		module.fail_json(msg="Entry Addition Query was unseccessful.", exp=str(conn))	      # here there is no interesting error message,
+	except Exception as e:									      # conn gives relevant data. 
+		print json.dumps({"failed": True, "msg": e})
+		module.fail_json(msg="Something bad happend.")
+	exit(module, added)	
 
 
 if __name__ == '__main__':
